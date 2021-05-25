@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
@@ -212,7 +213,7 @@ func openCertCluster(c corev1.CoreV1Interface, namespace, name string) (io.ReadC
 	f, err := c.
 		Services(namespace).
 		ProxyGet("http", name, "", "/v1/cert.pem", nil).
-		Stream()
+		Stream(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("cannot fetch certificate: %v", err)
 	}
@@ -317,7 +318,7 @@ func validateSealedSecret(in io.Reader, namespace, name string) error {
 		Suffix("/v1/verify")
 
 	req.Body(content)
-	res := req.Do()
+	res := req.Do(context.TODO())
 	if err := res.Error(); err != nil {
 		if status, ok := err.(*k8serrors.StatusError); ok && status.Status().Code == http.StatusConflict {
 			return fmt.Errorf("unable to decrypt sealed secret")
@@ -351,7 +352,7 @@ func reEncryptSealedSecret(in io.Reader, out io.Writer, codecs runtimeserializer
 		Suffix("/v1/rotate")
 
 	req.Body(content)
-	res := req.Do()
+	res := req.Do(context.TODO())
 	if err := res.Error(); err != nil {
 		if status, ok := err.(*k8serrors.StatusError); ok && status.Status().Code == http.StatusConflict {
 			return fmt.Errorf("unable to rotate secret")
